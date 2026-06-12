@@ -77,15 +77,16 @@ var QRCodeEnableKanji = true
 // indicates whether the error can be resolved by upgrading the barcode version.
 func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCodeEccLevel, quietZone int,
     escape, mirror, invert bool, background, foreground string, module, left, top float64, rightAlign, bottomAlign bool,
-    drawRect func(left, top, width, height float64, r, g, b, a uint8, background bool) error) (float64, float64, error) {
+    drawRect func(left, top, width, height float64, r, g, b, a uint8, background bool) error) (float64, float64, error,
+    bool) {
     if module <= 0 {
-        return 0, 0, fmt.Errorf("invalid module value: %f", module)
+        return 0, 0, fmt.Errorf("invalid module value: %f", module), false
     }
     if quietZone < 0 {
-        return 0, 0, fmt.Errorf("invalid quiet zone value: %d", quietZone)
+        return 0, 0, fmt.Errorf("invalid quiet zone value: %d", quietZone), false
     }
-    if matrix, err, _ := buildMatrix(data, kind, version, ecc, escape, mirror); err != nil {
-        return 0, 0, err
+    if matrix, err, up := buildMatrix(data, kind, version, ecc, escape, mirror); err != nil {
+        return 0, 0, err, up
     } else {
         hMargin := float64(quietZone) * module
         vMargin := hMargin
@@ -104,7 +105,7 @@ func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCode
         }
         rgba := ColorHex2RGBA(background, color.RGBA{R: 255, G: 255, B: 255, A: 255})
         if e := drawRect(left, top, width, height, rgba.R, rgba.G, rgba.B, rgba.A, true); e != nil {
-            return 0, 0, e
+            return 0, 0, e, false
         }
         rgba = ColorHex2RGBA(foreground, color.RGBA{R: 0, G: 0, B: 0, A: 255})
         top += vMargin
@@ -133,7 +134,7 @@ func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCode
                             dX := float64(count) * module
                             if e := drawRect(fromX, fromY, dX, module, rgba.R, rgba.G, rgba.B, rgba.A,
                                 false); e != nil {
-                                return 0, 0, e
+                                return 0, 0, e, false
                             }
                             fromX += dX
                         }
@@ -147,12 +148,12 @@ func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCode
             if count > 0 && state {
                 dX := float64(count) * module
                 if e := drawRect(fromX, fromY, dX, module, rgba.R, rgba.G, rgba.B, rgba.A, false); e != nil {
-                    return 0, 0, e
+                    return 0, 0, e, false
                 }
             }
             fromY += module
         }
-        return width, height, nil
+        return width, height, nil, false
     }
 }
 
