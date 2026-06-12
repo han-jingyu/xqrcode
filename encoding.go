@@ -1,14 +1,7 @@
 package xqrcode
 
 import (
-    "bytes"
     "fmt"
-    "image"
-    "image/color"
-    "image/png"
-    "math"
-    "net/http"
-    "os"
     "slices"
     "strconv"
     "strings"
@@ -30,7 +23,7 @@ const (
 
 func modeName(mode encodeMode) string {
     names := []string{"", "Numeric", "AlphaNumeric", "Byte", "Kanji", "ECI", "Fnc1 1st", "Fnc1 2nd", "Struct Append"}
-    return Localized(names[mode])
+    return names[mode]
 }
 
 type encodedSegment struct {
@@ -124,7 +117,7 @@ func getSegmentIndicator(kind QRCodeKind, version QRCodeVersion, mode encodeMode
             if m, ok := modeData[mode]; ok {
                 return &segmentIndicator{modeBits: 4, modeData: m, countBits: cb, countData: count}, nil, false
             } else {
-                return nil, fmt.Errorf(Localized("mode '%s' is not supported"), modeName(mode)), false
+                return nil, fmt.Errorf("mode '%s' is not supported", modeName(mode)), false
             }
         }
     case MicroQRCode:
@@ -140,7 +133,7 @@ func getSegmentIndicator(kind QRCodeKind, version QRCodeVersion, mode encodeMode
                 cb = c
                 if cb == 0 {
                     return nil, fmt.Errorf("mode '%s' is not supported by %s version '%d'", modeName(mode), kind,
-                    version), true
+                        version), true
                 }
             } else {
                 return nil, fmt.Errorf("mode '%s' is not supported", modeName(mode)), true
@@ -214,7 +207,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
                 switch preMode {
                 case numericMode:
                     if pprMode == curMode {
-                        if (pprHead + encodedLen(pprData+preData+curData, pprMode)) < (pprSize+preSize+curSize) {
+                        if (pprHead + encodedLen(pprData+preData+curData, pprMode)) < (pprSize + preSize + curSize) {
                             (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index+1].data...)
                             (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index].data...)
                             *segments = (*segments)[0 : len(*segments)-2]
@@ -233,7 +226,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
                         }
                     }
                 case byteMode:
-                    if !disableMerge && ((preHead + encodedLen(preData + curData, preMode)) <= (preSize+curSize)) {
+                    if !disableMerge && ((preHead + encodedLen(preData+curData, preMode)) <= (preSize + curSize)) {
                         (*segments)[index-1].data = append((*segments)[index-1].data, (*segments)[index].data...)
                         *segments = (*segments)[0 : len(*segments)-1]
                     }
@@ -242,7 +235,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
                 switch preMode {
                 case numericMode, alphaNumericMode:
                     if pprMode == curMode {
-                        if (pprHead + encodedLen(pprData+preData+curData, pprMode)) < (pprSize+preSize + curSize) {
+                        if (pprHead + encodedLen(pprData+preData+curData, pprMode)) < (pprSize + preSize + curSize) {
                             (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index+1].data...)
                             (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index].data...)
                             *segments = (*segments)[0 : len(*segments)-2]
@@ -264,7 +257,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
             case kanjiMode:
                 switch preMode {
                 case byteMode:
-                    if !disableMerge && ((preHead + encodedLen(preData + curData, preMode)) <= (preSize + curSize)) {
+                    if !disableMerge && ((preHead + encodedLen(preData+curData, preMode)) <= (preSize + curSize)) {
                         (*segments)[index-1].data = append((*segments)[index-1].data, (*segments)[index].data...)
                         *segments = (*segments)[0 : len(*segments)-1]
                     }
@@ -364,10 +357,14 @@ func detectCharMode(data []byte, index int) encodeMode {
 
 func encodedLen(count int, mode encodeMode) int {
     switch mode {
-        case numericMode: return 10*(count/3) + []int{0, 4, 7}[count%3]
-        case alphaNumericMode: return 11*(count/2) + 6*(count%2)
-        case byteMode: return count * 8
-        case kanjiMode: return (count / 2) * 13
+    case numericMode:
+        return 10*(count/3) + []int{0, 4, 7}[count%3]
+    case alphaNumericMode:
+        return 11*(count/2) + 6*(count%2)
+    case byteMode:
+        return count * 8
+    case kanjiMode:
+        return (count / 2) * 13
     }
     return 0
 }
@@ -384,8 +381,8 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
             nxtCount := countModeChars(data, nxtMode, index)
             nxtSize := headerBits(kind, version, nxtMode) + encodedLen(nxtCount, nxtMode)
             sucMode := nullEncode
-            if index + nxtCount < len(data) {
-                sucMode = detectCharMode(data, index + nxtCount)
+            if index+nxtCount < len(data) {
+                sucMode = detectCharMode(data, index+nxtCount)
             }
             newMode := nxtMode
             disableMerge := false
@@ -400,7 +397,7 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
                     }
                 case alphaNumericMode, kanjiMode:
                     if sucMode == byteMode {
-                        if nxtSize >=  encodedLen(nxtCount, sucMode) {
+                        if nxtSize >= encodedLen(nxtCount, sucMode) {
                             newMode = sucMode
                         }
                     }
@@ -415,7 +412,7 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
                 switch nxtMode {
                 case numericMode:
                     if sucMode == alphaNumericMode {
-                        if nxtSize + headerBits(kind, version, sucMode) >= encodedLen(nxtCount, sucMode) {
+                        if nxtSize+headerBits(kind, version, sucMode) >= encodedLen(nxtCount, sucMode) {
                             newMode = sucMode
                         }
                     } else {
@@ -461,7 +458,7 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
                 case kanjiMode:
                     switch sucMode {
                     case byteMode:
-                        if nxtSize + headerBits(kind, version, byteMode) >= encodedLen(nxtCount, byteMode) {
+                        if nxtSize+headerBits(kind, version, byteMode) >= encodedLen(nxtCount, byteMode) {
                             newMode = byteMode
                         }
                     default:
@@ -477,7 +474,7 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
             curMode = newMode
         }
         appendSegment(&result, segmentDivision{mode: nullEncode}, false)
-        return result, false
+        return result, nil, false
     }
 }
 
@@ -544,7 +541,8 @@ func splitBarcode(data []byte, kind QRCodeKind, version QRCodeVersion, escape bo
                 eci = 0
             case 's':
                 if i != 1 {
-                    return nil, fmt.Errorf("Struct Append must be located at the beginning of the barcode text: %d: %s",
+                    return nil, fmt.Errorf(
+                        "structured append must be located at the beginning of the barcode text: %d: %s",
                         i+1, string(data[i])), false
                 }
                 mode = "sa0"
@@ -569,8 +567,7 @@ func splitBarcode(data []byte, kind QRCodeKind, version QRCodeVersion, escape bo
             } else if data[i] >= '0' && data[i] <= '9' {
                 mode = "fnc1"
             } else {
-                return nil, WrapError(fmt.Errorf(Localized("invalid character in GS1 AI")),
-                    Localized("invalid character: %d: %s"), i+1, string(data[i])), false
+                return nil, fmt.Errorf("invalid character in GS1 AI: %d: %s", i+1, string(data[i])), false
             }
         case "fnc1":
             if data[i] >= '0' && data[i] <= '9' {
@@ -597,7 +594,7 @@ func splitBarcode(data []byte, kind QRCodeKind, version QRCodeVersion, escape bo
         case "eci1":
             if data[i] == ']' {
                 if eci == -1 {
-                    return nil, fmt.Errorf("missing ECI value: %d: %s"), i+1, string(data[i])), false
+                    return nil, fmt.Errorf("missing ECI value: %d: %s", i+1, string(data[i])), false
                 }
                 if len(cur) != 0 {
                     if s, e, u := optimizeEncode(cur, kind, version); e != nil {
@@ -646,9 +643,9 @@ func splitBarcode(data []byte, kind QRCodeKind, version QRCodeVersion, escape bo
                         "the index value %d of Structured Append must be between 1 and 16 (inclusive): %d: %s", saIndex,
                         i+1, string(data[i])), false
                 }
-            } else { // 结构追加参数括号中索引值含非法字符
-                return nil, WrapError(fmt.Errorf(Localized("invalid character in index value of Structured Append")),
-                    Localized("invalid character: %d: %s"), i+1, string(data[i])), false
+            } else {
+                return nil, fmt.Errorf("invalid character in index value of Structured Append: %d: %s", i+1,
+                    string(data[i])), false
             }
         case "sa2":
             if data[i] == ',' {
@@ -737,18 +734,28 @@ func encodeNumeric(data []byte) encodedSegment {
 
 func alphaNumericValue(ch byte) uint8 {
     switch {
-        case ch >= '0' && ch <= '9': return ch - '0'
-        case ch >= 'A' && ch <= 'Z':
+    case ch >= '0' && ch <= '9':
+        return ch - '0'
+    case ch >= 'A' && ch <= 'Z':
         return ch - 'A' + 10
-        case ch == ' ': return 36
-        case ch == '$': return 37
-        case ch == '%': return 38
-        case ch == '*': return 39
-        case ch == '+': return 40
-        case ch == '-': return 41
-        case ch == '.': return 42
-        case ch == '/': return 43
-        case ch == ':': return 44
+    case ch == ' ':
+        return 36
+    case ch == '$':
+        return 37
+    case ch == '%':
+        return 38
+    case ch == '*':
+        return 39
+    case ch == '+':
+        return 40
+    case ch == '-':
+        return 41
+    case ch == '.':
+        return 42
+    case ch == '/':
+        return 43
+    case ch == ':':
+        return 44
     }
     return 0
 }
@@ -841,14 +848,22 @@ func encodeData(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCodeE
         for _, segDiv := range divisions {
             var segment encodedSegment
             switch segDiv.mode {
-                case numericMode: segment = encodeNumeric(segDiv.data)
-                case alphaNumericMode: segment = encodeAlphaNumeric(segDiv.data)
-                case kanjiMode: segment = encodeKanji(segDiv.data)
-                case byteMode: segment = encodeByte(segDiv.data)
-                case eciMode: segment = encodeECI(segDiv.data)
-                case fnc1Mode1: segment = encodeFNC1Mode1()
-                case fnc1Mode2: segment = encodeFNC1Mode2(segDiv.data)
-                case structAppendMode: segment = encodeStructAppend(segDiv.data)
+            case numericMode:
+                segment = encodeNumeric(segDiv.data)
+            case alphaNumericMode:
+                segment = encodeAlphaNumeric(segDiv.data)
+            case kanjiMode:
+                segment = encodeKanji(segDiv.data)
+            case byteMode:
+                segment = encodeByte(segDiv.data)
+            case eciMode:
+                segment = encodeECI(segDiv.data)
+            case fnc1Mode1:
+                segment = encodeFNC1Mode1()
+            case fnc1Mode2:
+                segment = encodeFNC1Mode2(segDiv.data)
+            case structAppendMode:
+                segment = encodeStructAppend(segDiv.data)
             }
             if header, err, up := getSegmentIndicator(kind, version, segment.mode, uint16(segment.count)); err != nil {
                 return nil, err, up, ecc
@@ -990,7 +1005,7 @@ func EncodeGS1(barcode string) ([]byte, error) {
                 inAi = false
                 value = ""
             default:
-                return "", fmt.Errorf("invalid GS1 barcode character: %d: %s", i+1, string(c))
+                return nil, fmt.Errorf("invalid GS1 barcode character: %d: %s", i+1, string(c))
             }
         } else {
             switch c {
@@ -1020,11 +1035,11 @@ func EncodeGS1(barcode string) ([]byte, error) {
                         inAi = true
                     }
                 } else {
-                    return "", fmt.Errorf("invalid GS1 barcode character: %d: %s", i+1, string(c))
+                    return nil, fmt.Errorf("invalid GS1 barcode character: %d: %s", i+1, string(c))
                 }
             default:
                 if ai == "" {
-                    return "", fmt.Errorf("invalid GS1 barcode character: %d: %s", i+1, string(c))
+                    return nil, fmt.Errorf("invalid GS1 barcode character: %d: %s", i+1, string(c))
                 } else if c == '\\' {
                     value += "\\\\"
                 } else {

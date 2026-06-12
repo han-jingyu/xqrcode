@@ -77,9 +77,9 @@ var QRCodeEnableKanji = true
 // indicates whether the error can be resolved by upgrading the barcode version.
 func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCodeEccLevel, quietZone int,
     escape, mirror, invert bool, background, foreground string, module, left, top float64, rightAlign, bottomAlign bool,
-    drawRect func (left, top, width, height float64, r, g, b, a uint8, background bool) error) (float64, float64, error) {
+    drawRect func(left, top, width, height float64, r, g, b, a uint8, background bool) error) (float64, float64, error) {
     if module <= 0 {
-        return 0, 0, fmt.Errorf("invalid module value: %d", module)
+        return 0, 0, fmt.Errorf("invalid module value: %f", module)
     }
     if quietZone < 0 {
         return 0, 0, fmt.Errorf("invalid quiet zone value: %d", quietZone)
@@ -91,8 +91,12 @@ func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCode
         vMargin := hMargin
         height := float64(quietZone*2+len(*matrix)) * module
         width := float64(quietZone*2+len((*matrix)[0])) * module
-        if bottomAlign { top -= height }
-        if rightAlign { left -= width }
+        if bottomAlign {
+            top -= height
+        }
+        if rightAlign {
+            left -= width
+        }
         if invert {
             tmpColor := background
             background = foreground
@@ -126,7 +130,7 @@ func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCode
                 } else {
                     if state {
                         if count > 0 {
-                            dX := float64(count)*module
+                            dX := float64(count) * module
                             if e := drawRect(fromX, fromY, dX, module, rgba.R, rgba.G, rgba.B, rgba.A,
                                 false); e != nil {
                                 return 0, 0, e
@@ -141,7 +145,7 @@ func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCode
                 }
             }
             if count > 0 && state {
-                dX := float64(count)*module
+                dX := float64(count) * module
                 if e := drawRect(fromX, fromY, dX, module, rgba.R, rgba.G, rgba.B, rgba.A, false); e != nil {
                     return 0, 0, e
                 }
@@ -181,24 +185,28 @@ func DrawQRCode2(data []byte, left, top int, kind QRCodeKind, version QRCodeVers
     module, quietZone int, background, foreground string, escape, mirror, invert, rightAlign, bottomAlign bool,
     drawDot func(left, top int, r, g, b, a uint8, background bool) error) (int, int, error, bool) {
     if module <= 0 {
-        return fmt.Errorf("invalid module value: %d", module), false
+        return 0, 0, fmt.Errorf("invalid module value: %d", module), false
     }
     if quietZone < 0 {
-        return fmt.Errorf("invalid quiet zone value: %d", quietZone), false
+        return 0, 0, fmt.Errorf("invalid quiet zone value: %d", quietZone), false
     }
     if matrix, err, up := buildMatrix(data, kind, version, ecc, escape, mirror); err != nil {
         return 0, 0, err, up
     } else {
         height := (len(*matrix) + quietZone*2) * module
         width := (len((*matrix)[0]) + quietZone*2) * module
-        if bottomAlign { top -= height }
-        if rightAlign { left -= width }
-        if invert {
-            tmpColor := dotColor
-            dotColor = spcColor
-            spcColor = tmpColor
+        if bottomAlign {
+            top -= height
         }
-        if e := drawQRDots(matrix, left, top, module, quietZone, spcColor, dotColor, drawDot); e != nil {
+        if rightAlign {
+            left -= width
+        }
+        if invert {
+            tmpColor := foreground
+            foreground = background
+            background = tmpColor
+        }
+        if e := drawQRDots(matrix, left, top, module, quietZone, background, foreground, drawDot); e != nil {
             return width, height, e, false
         }
         return width, height, nil, false
@@ -225,7 +233,7 @@ func DrawQRCode2(data []byte, left, top int, kind QRCodeKind, version QRCodeVers
 // version.
 func QRCodeToFile(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCodeEccLevel, module, quietZone int,
     background, foreground string, escape, mirror, invert bool, format QRCodeFormat, output string) (error, bool) {
-    if img, err, up := QRCodeToImage(data, kind, version, ecc, module, quietZone, background, foreground, escape,
+    if img, err, up := qrCodeToImage(data, kind, version, ecc, module, quietZone, background, foreground, escape,
         mirror, invert, format); err != nil {
         return err, up
     } else {
@@ -250,9 +258,9 @@ func QRCodeToFile(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCod
 // This function returns the number of response bytes. When an error occurs, the final return value indicates whether
 // the error can be resolved by upgrading the barcode version.
 func QRCodeToHTTP(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCodeEccLevel, module, quietZone int,
-        background, foreground string, escape, mirror, invert bool, format BarcodeFormat, w http.ResponseWriter) (int64,
-        error, bool) {
-    if img, err, up := QRCodeToImage(data, kind, version, ecc, module, quietZone, background, foreground , escape,
+    background, foreground string, escape, mirror, invert bool, format QRCodeFormat, w http.ResponseWriter) (int64,
+    error, bool) {
+    if img, err, up := qrCodeToImage(data, kind, version, ecc, module, quietZone, background, foreground, escape,
         mirror, invert, format); err != nil {
         return 0, err, up
     } else {
@@ -291,7 +299,7 @@ func QRCodeToHTTP(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCod
 //  - This function returns a string for output to the command-line terminal.  When an error occurs, the final return
 //    value indicates whether the error can be resolved by upgrading the barcode version.
 func SprintQRCode(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCodeEccLevel, quietZone int, color string,
-        escape, mirror bool) (string, error, bool) {
+    escape, mirror bool) (string, error, bool) {
     if quietZone < 0 {
         return "", fmt.Errorf("invalid quiet zone value: %d", quietZone), false
     }
@@ -332,8 +340,8 @@ func SprintQRCode(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCod
 }
 
 func qrCodeToImage(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCodeEccLevel, module, quietZone int,
-    spcColor, dotColor string, escape, mirror, invert bool, format BarcodeFormat) ([]byte, error, bool) {
-    if format != BarcodeFormatSvg && format != BarcodeFormatPng {
+    spcColor, dotColor string, escape, mirror, invert bool, format QRCodeFormat) ([]byte, error, bool) {
+    if format != QRCodeFormatSvg && format != QRCodeFormatPng {
         return nil, fmt.Errorf("unknow QRCode format (svg, png): %s", format), false
     }
     if module <= 0 {
@@ -352,7 +360,7 @@ func qrCodeToImage(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCo
         }
         height := len(*matrix)
         width := len((*matrix)[0])
-        if format == BarcodeFormatSvg {
+        if format == QRCodeFormatSvg {
             svg := fmt.Sprintf(svgQRCodeHeader, (width+quietZone*2)*module, (height+quietZone*2)*module,
                 width+quietZone*2, height+quietZone*2, ColorHex2CSS(spcColor, "#ffffff"))
             svg += "<path d=\""
@@ -431,6 +439,21 @@ func ColorHex2RGBA(hex string, def color.RGBA) color.RGBA {
                 B: uint8((values >> 8) & 0xff),
                 A: uint8(values & 0xff),
             }
+        }
+    }
+}
+
+func ColorHex2CSS(hex string, def string) string {
+    hex = strings.Trim(hex, "# \n\t\v")
+    if values, err := strconv.ParseUint(hex, 16, 32); err != nil {
+        return def
+    } else {
+        if len(hex) <= 6 {
+            return fmt.Sprintf("#%02x%02x%02x", uint8(values>>16)&0xff, uint8((values>>8)&0xff),
+                uint8(values&0xff))
+        } else {
+            return fmt.Sprintf("#%02x%02x%02x%02x", uint8(values>>24)&0xff, uint8((values>>16)&0xff),
+                uint8((values>>8)&0xff), uint8(values&0xff))
         }
     }
 }
@@ -640,7 +663,7 @@ func drawFormat(matrix *[][]uint8, kind QRCodeKind, ver QRCodeVersion, ecc QRCod
     case MicroQRCode:
         data := (map[QRCodeEccLevel][]int{QREccLowest: {0, 1, 3, 5}, QREccMedium: {0, 2, 4, 6},
             QREccQuality: {0, 0, 0, 7}}[ecc][ver-1] << 2) | mask&3
-        data = ((data << 10) | BCH(data, 10, 1335)) ^ 0x4445
+        data = ((data << 10) | bch(data, 10, 1335)) ^ 0x4445
         dots := []int{1, 2, 3, 4, 5, 6, 7, 8, 8, 8, 8, 8, 8, 8, 8}
         for i := 0; i < 15; i++ {
             (*matrix)[dots[i]][dots[14-i]] = uint8((data & 1) | 32)
@@ -649,7 +672,7 @@ func drawFormat(matrix *[][]uint8, kind QRCodeKind, ver QRCodeVersion, ecc QRCod
     case QRCode:
         data := (map[QRCodeEccLevel]int{QREccLowest: 1, QREccMedium: 0, QREccQuality: 3, QREccHighest: 2}[ecc] << 3) |
             (mask & 7)
-        data = ((data << 10) | BCH(data, 10, 1335)) ^ 0x5412
+        data = ((data << 10) | bch(data, 10, 1335)) ^ 0x5412
         rows := []int{0, 1, 2, 3, 4, 5, 7, 8, -7, -6, -5, -4, -3, -2, -1}
         cols := []int{-1, -2, -3, -4, -5, -6, -7, -8, 7, 5, 4, 3, 2, 1, 0}
         for i := 0; i < 15; i++ {
@@ -676,7 +699,7 @@ func drawVersion(matrix *[][]uint8, kind QRCodeKind, ver QRCodeVersion, ecc QRCo
     switch kind {
     case QRCode:
         if ver >= 7 {
-            data := (ver << 12) | BCH(ver, 12, 7973)
+            data := (ver << 12) | bch(ver, 12, 7973)
             for i := 0; i < 18; i++ {
                 x := width - 11 + (i % 3)
                 y := i / 3
@@ -690,7 +713,7 @@ func drawVersion(matrix *[][]uint8, kind QRCodeKind, ver QRCodeVersion, ecc QRCo
         if ecc == QREccHighest {
             data |= 32
         }
-        data = (data << 12) | BCH(data, 12, 7973)
+        data = (data << 12) | bch(data, 12, 7973)
         ver1 := data ^ 0x1fab2
         for i := 0; i < 18; i++ {
             di := i % 5
@@ -846,23 +869,35 @@ func maskValue(kind QRCodeKind, mask int, row, col int) uint8 {
     switch kind {
     case QRCode:
         switch mask {
-            case 0: r = ((row + col) % 2) == 0
-            case 1: r = (row % 2) == 0
-            case 2: r = (col % 3) == 0
-            case 3: r = ((row + col) % 3) == 0
-            case 4: r = ((row/2 + col/3) % 2) == 0
-            case 5: r = ((col*row)%2 + (col*row)%3) == 0
-            case 6: r = ((col*row)%2+(col*row)%3)%2 == 0
-            case 7: r = ((col+row)%2+(col*row)%3)%2 == 0
+        case 0:
+            r = ((row + col) % 2) == 0
+        case 1:
+            r = (row % 2) == 0
+        case 2:
+            r = (col % 3) == 0
+        case 3:
+            r = ((row + col) % 3) == 0
+        case 4:
+            r = ((row/2 + col/3) % 2) == 0
+        case 5:
+            r = ((col*row)%2 + (col*row)%3) == 0
+        case 6:
+            r = ((col*row)%2+(col*row)%3)%2 == 0
+        case 7:
+            r = ((col+row)%2+(col*row)%3)%2 == 0
         }
     case RMQRCode:
         r = ((row/2 + col/3) % 2) == 0
     case MicroQRCode:
         switch mask {
-            case 0: r = (row % 2) == 0
-            case 1: r = ((row/2 + col/3) % 2) == 0
-            case 2: r = ((col*row)%2+(col*row)%3)%2 == 0
-            case 3: r = ((col+row)%2+(col*row)%3)%2 == 0
+        case 0:
+            r = (row % 2) == 0
+        case 1:
+            r = ((row/2 + col/3) % 2) == 0
+        case 2:
+            r = ((col*row)%2+(col*row)%3)%2 == 0
+        case 3:
+            r = ((col+row)%2+(col*row)%3)%2 == 0
         }
     }
     if r {
@@ -892,14 +927,24 @@ func placeMatrix(matrix [][]uint8, codes []byte, kind QRCodeKind, version QRCode
     for col >= 0 {
         switch kind {
         case QRCode:
-            if col == 6 { col-- }
+            if col == 6 {
+                col--
+            }
         case MicroQRCode:
-            if col == 0 { break }
+            if col == 0 {
+                break
+            }
         case RMQRCode:
-            if col == 0 { break }
-            if col == len(matrix[0])-1 { col-- }
+            if col == 0 {
+                break
+            }
+            if col == len(matrix[0])-1 {
+                col--
+            }
         }
-        if col < 0 { break }
+        if col < 0 {
+            break
+        }
         for {
             for pair := 0; pair <= 1; pair++ {
                 if (col-pair >= 0) && (matrix[row][col-pair]&0xfc == 0) {
@@ -1112,9 +1157,12 @@ func totalDataWords(kind QRCodeKind, version QRCodeVersion, ecc QRCodeEccLevel) 
 
 func terminateBits(kind QRCodeKind, version QRCodeVersion) int {
     switch kind {
-        case QRCode: return 4
-        case RMQRCode: return 3
-        case MicroQRCode: return version * 2 + 1
+    case QRCode:
+        return 4
+    case RMQRCode:
+        return 3
+    case MicroQRCode:
+        return version*2 + 1
     }
     return 0
 }

@@ -1,19 +1,5 @@
 package xqrcode
 
-import (
-    "bytes"
-    "fmt"
-    "image"
-    "image/color"
-    "image/png"
-    "math"
-    "net/http"
-    "os"
-    "slices"
-    "strconv"
-    "strings"
-)
-
 func init() {
     rsInitTables()
 }
