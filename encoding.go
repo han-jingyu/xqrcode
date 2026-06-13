@@ -158,7 +158,7 @@ type segmentDivision struct {
     head int
 }
 
-func appendSegment(segments *[]segmentDivision, segment segmentDivision, disableMerge bool) {
+func appendSegment(segments *[]segmentDivision, segment segmentDivision) {
     if segment.mode != nullEncode {
         *segments = append(*segments, segment)
     }
@@ -194,7 +194,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
             case numericMode:
                 switch preMode {
                 case alphaNumericMode, byteMode:
-                    if !disableMerge && ((preHead + encodedLen(preData+curData, preMode)) <= (preSize + curSize)) {
+                    if (preHead + encodedLen(preData+curData, preMode)) <= (preSize + curSize) {
                         (*segments)[index-1].data = append((*segments)[index-1].data, (*segments)[index].data...)
                         *segments = (*segments)[0 : len(*segments)-1]
                         if preMode == alphaNumericMode {
@@ -226,7 +226,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
                         }
                     }
                 case byteMode:
-                    if !disableMerge && ((preHead + encodedLen(preData+curData, preMode)) <= (preSize + curSize)) {
+                    if (preHead + encodedLen(preData+curData, preMode)) <= (preSize + curSize) {
                         (*segments)[index-1].data = append((*segments)[index-1].data, (*segments)[index].data...)
                         *segments = (*segments)[0 : len(*segments)-1]
                     }
@@ -257,7 +257,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
             case kanjiMode:
                 switch preMode {
                 case byteMode:
-                    if !disableMerge && ((preHead + encodedLen(preData+curData, preMode)) <= (preSize + curSize)) {
+                    if (preHead + encodedLen(preData+curData, preMode)) <= (preSize + curSize) {
                         (*segments)[index-1].data = append((*segments)[index-1].data, (*segments)[index].data...)
                         *segments = (*segments)[0 : len(*segments)-1]
                     }
@@ -385,7 +385,6 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
                 sucMode = detectCharMode(data, index+nxtCount)
             }
             newMode := nxtMode
-            disableMerge := false
             switch curMode {
             case nullEncode, kanjiMode:
                 switch nxtMode {
@@ -420,6 +419,12 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
                             newMode = alphaNumericMode
                         }
                     }
+                case kanjiMode:
+                    if sucMode == byteMode {
+                        if nxtSize >= encodedLen(nxtCount, sucMode) {
+                            newMode = sucMode
+                        }
+                    }
                 }
             case byteMode:
                 switch nxtMode {
@@ -429,7 +434,6 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
                         if nxtSize >= encodedLen(nxtCount, byteMode) {
                             newMode = byteMode
                         }
-                        disableMerge = true
                     case byteMode:
                         if (nxtSize + headerBits(kind, version, byteMode)) >= encodedLen(nxtCount, byteMode) {
                             newMode = byteMode
@@ -445,7 +449,6 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
                         if nxtSize >= encodedLen(nxtCount, byteMode) {
                             newMode = byteMode
                         }
-                        disableMerge = true
                     case byteMode:
                         if (nxtSize + headerBits(kind, version, byteMode)) >= encodedLen(nxtCount, byteMode) {
                             newMode = byteMode
@@ -469,11 +472,11 @@ func optimizeEncode(data []byte, kind QRCodeKind, version QRCodeVersion) ([]segm
                 }
             }
             appendSegment(&result, segmentDivision{mode: newMode, head: headerBits(kind, version, newMode),
-                data: data[index : index+nxtCount]}, disableMerge)
+                data: data[index : index+nxtCount]})
             index += nxtCount
             curMode = newMode
         }
-        appendSegment(&result, segmentDivision{mode: nullEncode}, false)
+        appendSegment(&result, segmentDivision{mode: nullEncode})
         return result, nil, false
     }
 }
