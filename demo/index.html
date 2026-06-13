@@ -1,0 +1,113 @@
+<html lang="en">
+<head>
+    <script type="text/javascript" charset="utf-8">
+        function decodeHeader(value) {
+            const binary = atob(value);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            const decoder = new TextDecoder('utf-8');
+            return decoder.decode(bytes);
+        }
+        function init() {
+            const form = document.getElementById("parameters");
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const response = await fetch('/qrcode', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    document.getElementById("status").innerHTML = ""
+                    const imageBlob = await response.blob();
+                    document.getElementById("image").src = URL.createObjectURL(imageBlob);
+                } else {
+                    document.getElementById("status").innerHTML = decodeHeader(response.headers.get("Qr-Error"));
+                    document.getElementById("image").src = "";
+                }
+            });
+        }
+    </script>
+    <style>
+        label { font-size: 9pt; }
+        p { margin: 10px 0 0 10px; }
+        textarea { width: 500px; height: 100px; }
+        input[type=text]{width: 100px; }
+    </style>
+    <title>QRCode/rMQRCode/MicroQRCode Generator</title>
+</head>
+<body onload="init();">
+    <form id="parameters">
+        <p><label for="kind">Barcode type:</label>
+           <select name="kind" id="kind">
+              <option value="QRCode" selected>QRCode</option>
+              <option value="rMQRCode">rMQRCode</option>
+              <option value="MicroQRCode">MicroQRCode</option>
+           </select>&nbsp;&nbsp;
+           <label for="format">Format:</label>
+           <select name="format" id="format">
+              <option value="png" selected>PNG</option>
+              <option value="svg">SVG</option>
+           </select></p>
+        <p><label for="version" class="d2">Version:</label>
+           <select name="version" id="version">
+              <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+              <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+              <option value="13">13</option><option value="14">14</option><option value="15">15</option>
+              <option value="16">16</option><option value="17">17</option><option value="18">18</option>
+              <option value="19">19</option><option value="20">20</option><option value="21">21</option>
+              <option value="22">22</option><option value="23">23</option><option value="24">24</option>
+              <option value="25">25</option><option value="26">26</option><option value="27">27</option>
+              <option value="28">28</option><option value="29">29</option><option value="30">30</option>
+              <option value="31">31</option><option value="32">32</option><option value="33">33</option>
+              <option value="34">34</option><option value="35">35</option><option value="36">36</option>
+              <option value="37">37</option><option value="38">38</option><option value="39">39</option>
+              <option value="40">40</option>
+           </select>&nbsp;&nbsp;
+           <label for="ecc">Error Correction level:</label>
+           <select name="ecc" id="ecc">
+              <option value="L" selected>L</option>
+              <option value="M">M</option>
+              <option value="Q">Q</option>
+              <option value="H">H</option>
+           </select>&nbsp;&nbsp;
+           <label for="module">Module:</label>
+           <select name="module" id="module">
+               <option value="1">1</option><option value="2" selected>2</option><option value="3">3</option>
+               <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+               <option value="7">7</option><option value="8">8</option>
+           </select>&nbsp;&nbsp;
+           <label for="quiet">Quiet zone:</label>
+           <select name="quiet" id="quiet">
+               <option value="1">1</option><option value="2" selected>2</option><option value="3">3</option>
+               <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+               <option value="7">7</option><option value="8">8</option>
+           </select></p>
+        <p><label for="bgcolor">Background color:</label>
+           <input type="text" id="bgcolor" name="bgcolor" value="#ffffff" />
+           &nbsp;&nbsp;
+           <label for="fgcolor">Foreground color:</label>
+           <input type="text" id="fgcolor" name="fgcolor" value="#000000" />
+           &nbsp;&nbsp;</p>
+        <p><input type="checkbox" id="escape" name="escape" value="escape"/>
+           <label for="escape">Escape:</label>&nbsp;&nbsp;
+           <input type="checkbox" id="gs1" name="gs1" value="gs1"/>
+           <label for="gs1">GS1:</label>&nbsp;&nbsp;
+           <input type="checkbox" id="mirror" name="mirror" value="mirror"/>
+           <label for="mirror">Mirror:</label>&nbsp;&nbsp;
+           <input type="checkbox" id="invert" name="invert" value="invert"/>
+           <label for="invert">Invert:</label>&nbsp;&nbsp;
+           <input type="checkbox" id="color" name="color" value="color"/>
+           <label for="color" class="d2">Display structure:</label></p>
+        <p><label for="barcode">Barcode text:</label><br/>
+           <textarea id="barcode" name="barcode"></textarea></p>
+        <p><button type="submit">Show</button></p>
+        <p id="status"></p>
+        <p><img id="image" src="" alt="barcode symbol"/></p>
+    </form>
+</body>
+</html>

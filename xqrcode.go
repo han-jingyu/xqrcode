@@ -103,11 +103,11 @@ func DrawQRCode1(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCode
             background = foreground
             foreground = tmpColor
         }
-        rgba := ColorHex2RGBA(background, color.RGBA{R: 255, G: 255, B: 255, A: 255})
+        rgba := colorHex2RGBA(background, color.RGBA{R: 255, G: 255, B: 255, A: 255})
         if e := drawRect(left, top, width, height, rgba.R, rgba.G, rgba.B, rgba.A, true); e != nil {
             return 0, 0, e, false
         }
-        rgba = ColorHex2RGBA(foreground, color.RGBA{R: 0, G: 0, B: 0, A: 255})
+        rgba = colorHex2RGBA(foreground, color.RGBA{R: 0, G: 0, B: 0, A: 255})
         top += vMargin
         left += hMargin
         rows := len(*matrix)
@@ -363,7 +363,7 @@ func qrCodeToImage(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCo
         width := len((*matrix)[0])
         if format == QRCodeFormatSvg {
             svg := fmt.Sprintf(svgQRCodeHeader, (width+quietZone*2)*module, (height+quietZone*2)*module,
-                width+quietZone*2, height+quietZone*2, ColorHex2CSS(spcColor, "#ffffff"))
+                width+quietZone*2, height+quietZone*2, colorHex2CSS(spcColor, "#ffffff"))
             svg += "<path d=\""
             for i := 0; i < height; i++ {
                 svg += fmt.Sprintf("M%d %d.5", quietZone, quietZone+i)
@@ -397,7 +397,7 @@ func qrCodeToImage(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCo
                 }
             }
             svg += fmt.Sprintf(`" style="stroke-width: 1; stroke-linecap: butt; stroke: %s"/></svg>`,
-                ColorHex2CSS(dotColor, "#000000"))
+                colorHex2CSS(dotColor, "#000000"))
             return []byte(svg), nil, false
         } else {
             iPng := image.NewRGBA(image.Rect(0, 0, (width+quietZone*2)*module, (height+quietZone*2)*module))
@@ -421,7 +421,7 @@ func qrCodeToImage(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCo
     }
 }
 
-func ColorHex2RGBA(hex string, def color.RGBA) color.RGBA {
+func colorHex2RGBA(hex string, def color.RGBA) color.RGBA {
     hex = strings.Trim(hex, "# \n\t\v")
     if values, err := strconv.ParseUint(hex, 16, 32); err != nil {
         return def
@@ -444,7 +444,7 @@ func ColorHex2RGBA(hex string, def color.RGBA) color.RGBA {
     }
 }
 
-func ColorHex2CSS(hex string, def string) string {
+func colorHex2CSS(hex string, def string) string {
     hex = strings.Trim(hex, "# \n\t\v")
     if values, err := strconv.ParseUint(hex, 16, 32); err != nil {
         return def
@@ -1041,7 +1041,7 @@ func drawQRDots(matrix *[][]byte, left, top, module, quietZone int, spcColor, do
     drawDot func(left, top int, r, g, b, a uint8, background bool) error) error {
     height := len(*matrix)
     width := len((*matrix)[0])
-    rgba := ColorHex2RGBA(spcColor, color.RGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff})
+    rgba := colorHex2RGBA(spcColor, color.RGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff})
     for x := left; x < left+(width+quietZone*2)*module; x++ {
         for y := top; y < top+(height+quietZone*2)*module; y++ {
             if e := drawDot(x, y, rgba.R, rgba.G, rgba.B, rgba.A, true); e != nil {
@@ -1049,7 +1049,7 @@ func drawQRDots(matrix *[][]byte, left, top, module, quietZone int, spcColor, do
             }
         }
     }
-    rgba = ColorHex2RGBA(dotColor, color.RGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff})
+    rgba = colorHex2RGBA(dotColor, color.RGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff})
     for i := 0; i < height; i++ {
         for j := 0; j < width; j++ {
             if ((*matrix)[i][j] & 1) > 0 {
@@ -1071,13 +1071,13 @@ func colorPng(iPng *image.RGBA, matrix *[][]byte, module, quietZone int, invert 
     rgbSpc := color.RGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}
     rgbDot := color.RGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff}
     colors := map[byte][]color.RGBA{
-        0x00: {ColorHex2RGBA("#6b7280", rgbDot), ColorHex2RGBA("#f3f4f6", rgbSpc)}, // 数据位
-        0x02: {ColorHex2RGBA("#b45309", rgbDot), ColorHex2RGBA("#fef3c7", rgbSpc)}, // 剩余位
-        0x04: {ColorHex2RGBA("#b91c1c", rgbDot), ColorHex2RGBA("#fee2e2", rgbSpc)}, // 时序线
-        0x08: {ColorHex2RGBA("#115e59", rgbDot), ColorHex2RGBA("#f0fdfa", rgbSpc)}, // 对齐框
-        0x10: {ColorHex2RGBA("#3f6212", rgbDot), ColorHex2RGBA("#ecfccb", rgbSpc)}, // 发现框
-        0x20: {ColorHex2RGBA("#7e22ce", rgbDot), ColorHex2RGBA("#f3e8ff", rgbSpc)}, // 格式位
-        0x40: {ColorHex2RGBA("#1e40af", rgbDot), ColorHex2RGBA("#dbeafe", rgbSpc)}, // 版本位
+        0x00: {colorHex2RGBA("#6b7280", rgbDot), colorHex2RGBA("#f3f4f6", rgbSpc)}, // 数据位
+        0x02: {colorHex2RGBA("#b45309", rgbDot), colorHex2RGBA("#fef3c7", rgbSpc)}, // 剩余位
+        0x04: {colorHex2RGBA("#b91c1c", rgbDot), colorHex2RGBA("#fee2e2", rgbSpc)}, // 时序线
+        0x08: {colorHex2RGBA("#115e59", rgbDot), colorHex2RGBA("#f0fdfa", rgbSpc)}, // 对齐框
+        0x10: {colorHex2RGBA("#3f6212", rgbDot), colorHex2RGBA("#ecfccb", rgbSpc)}, // 发现框
+        0x20: {colorHex2RGBA("#7e22ce", rgbDot), colorHex2RGBA("#f3e8ff", rgbSpc)}, // 格式位
+        0x40: {colorHex2RGBA("#1e40af", rgbDot), colorHex2RGBA("#dbeafe", rgbSpc)}, // 版本位
     }
     height := len(*matrix)
     width := len((*matrix)[0])

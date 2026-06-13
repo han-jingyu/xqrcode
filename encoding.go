@@ -208,7 +208,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
                 case numericMode:
                     if pprMode == curMode {
                         if (pprHead + encodedLen(pprData+preData+curData, pprMode)) < (pprSize + preSize + curSize) {
-                            (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index+1].data...)
+                            (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index-1].data...)
                             (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index].data...)
                             *segments = (*segments)[0 : len(*segments)-2]
                             index--
@@ -236,7 +236,7 @@ func appendSegment(segments *[]segmentDivision, segment segmentDivision, disable
                 case numericMode, alphaNumericMode:
                     if pprMode == curMode {
                         if (pprHead + encodedLen(pprData+preData+curData, pprMode)) < (pprSize + preSize + curSize) {
-                            (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index+1].data...)
+                            (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index-1].data...)
                             (*segments)[index-2].data = append((*segments)[index-2].data, (*segments)[index].data...)
                             *segments = (*segments)[0 : len(*segments)-2]
                             index--
@@ -989,7 +989,11 @@ func encodeData(data []byte, kind QRCodeKind, version QRCodeVersion, ecc QRCodeE
 }
 
 // EncodeGS1 : Encode a GS1 barcode string in order to generate GS1 barcode (to be used as the barcode data for QRCode
-// or rMQRCode). The `escape` parameter must be set to `true` when using this function.
+// or rMQRCode).
+//
+// The `escape` parameter must be set to `true` when using this function.
+//
+// Note: When inserting `"("` into a GS1 AI element value, please use `"(("`.
 func EncodeGS1(barcode string) ([]byte, error) {
     result := "\\f"
     inAi := false
