@@ -1,6 +1,6 @@
 module test
 
-go 1.13.1
+go 1.21
 
 require (
 	github.com/signintech/gopdf v0.36.1

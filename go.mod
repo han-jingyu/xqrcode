@@ -1,3 +1,3 @@
 module macsvn.co/xqrcode
 
-go 1.13.1
+go 1.21

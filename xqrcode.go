@@ -1055,7 +1055,7 @@ func drawQRDots(matrix *[][]byte, left, top, module, quietZone int, spcColor, do
             if ((*matrix)[i][j] & 1) > 0 {
                 for di := 0; di < module; di++ {
                     for dj := 0; dj < module; dj++ {
-                        if e := drawDot(top+(quietZone+j)*module+dj, left+(quietZone+i)*module+di,
+                        if e := drawDot(left+(quietZone+j)*module+dj, top+(quietZone+i)*module+di,
                             rgba.R, rgba.G, rgba.B, rgba.A, false); e != nil {
                             return e
                         }
@@ -1071,13 +1071,13 @@ func colorPng(iPng *image.RGBA, matrix *[][]byte, module, quietZone int, invert 
     rgbSpc := color.RGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}
     rgbDot := color.RGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xff}
     colors := map[byte][]color.RGBA{
-        0x00: {colorHex2RGBA("#6b7280", rgbDot), colorHex2RGBA("#f3f4f6", rgbSpc)}, // 数据位
-        0x02: {colorHex2RGBA("#b45309", rgbDot), colorHex2RGBA("#fef3c7", rgbSpc)}, // 剩余位
-        0x04: {colorHex2RGBA("#b91c1c", rgbDot), colorHex2RGBA("#fee2e2", rgbSpc)}, // 时序线
-        0x08: {colorHex2RGBA("#115e59", rgbDot), colorHex2RGBA("#f0fdfa", rgbSpc)}, // 对齐框
-        0x10: {colorHex2RGBA("#3f6212", rgbDot), colorHex2RGBA("#ecfccb", rgbSpc)}, // 发现框
-        0x20: {colorHex2RGBA("#7e22ce", rgbDot), colorHex2RGBA("#f3e8ff", rgbSpc)}, // 格式位
-        0x40: {colorHex2RGBA("#1e40af", rgbDot), colorHex2RGBA("#dbeafe", rgbSpc)}, // 版本位
+        0x00: {colorHex2RGBA("#6b7280", rgbDot), colorHex2RGBA("#f3f4f6", rgbSpc)},
+        0x02: {colorHex2RGBA("#b45309", rgbDot), colorHex2RGBA("#fef3c7", rgbSpc)},
+        0x04: {colorHex2RGBA("#b91c1c", rgbDot), colorHex2RGBA("#fee2e2", rgbSpc)},
+        0x08: {colorHex2RGBA("#115e59", rgbDot), colorHex2RGBA("#f0fdfa", rgbSpc)},
+        0x10: {colorHex2RGBA("#3f6212", rgbDot), colorHex2RGBA("#ecfccb", rgbSpc)},
+        0x20: {colorHex2RGBA("#7e22ce", rgbDot), colorHex2RGBA("#f3e8ff", rgbSpc)},
+        0x40: {colorHex2RGBA("#1e40af", rgbDot), colorHex2RGBA("#dbeafe", rgbSpc)},
     }
     height := len(*matrix)
     width := len((*matrix)[0])
